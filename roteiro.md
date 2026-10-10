@@ -90,7 +90,7 @@ graph LR
             Volume[("Volume pgdata<br/>(dados persistem<br/>entre restarts)")]
             Container --- Volume
         end
-        DBeaver -- "TCP, porta escolhida<br/>no setup.sh" --> Container
+        DBeaver -- "TCP, porta escolhida<br/>no setup.py" --> Container
     end
 ```
 
@@ -110,6 +110,36 @@ O script pergunta a porta (padrão `5433`, pra não conflitar com um Postgres qu
 no seu computador na `5432`), usuário, senha e nome do banco. Ao final ele já sobe o
 container e mostra os dados de conexão. Funciona igual em Windows, Linux e macOS.
 
+**Saída esperada** (os valores entre colchetes são o padrão — só dar Enter aceita;
+digite outro valor se quiser mudar):
+
+```text
+== Laboratório de Administração PostgreSQL ==
+
+Em qual porta expor o Postgres no seu computador? [5433]: 5434
+Usuário do banco [aluno]: aluno
+Senha do banco [aluno123]: aluno123
+Nome do banco [loja]: loja
+
+Configuração salva em .env. Subindo o container...
+ Network lab-postgresql-admin_default  Created
+ Volume lab-postgresql-admin_pgdata  Created
+ Container lab_postgres  Created
+ Container lab_postgres  Started
+
+Pronto! Conecte no DBeaver com:
+  Host:     localhost
+  Porta:    5434
+  Database: loja
+  Usuário:  aluno
+  Senha:    aluno123
+
+Driver: PostgreSQL (o DBeaver detecta e baixa o driver na primeira conexão).
+```
+
+Se a porta escolhida já estiver ocupada, o script avisa e pergunta de novo —
+não precisa reiniciar nada, só escolher outra porta (ex. `5434`, `5500`...).
+
 Pra parar: `docker compose stop`. Pra resetar tudo do zero (apaga os dados): `docker compose down -v`.
 
 ## 2. Conectar via DBeaver
@@ -119,9 +149,30 @@ lógica (processar SQL, gerenciar memória, controlar acesso) roda do lado do
 *servidor* (o container). É esse servidor que você vai administrar no resto do
 laboratório.
 
-Nova conexão → PostgreSQL → use os dados impressos pelo `setup.sh` (host `localhost`,
-a porta que você escolheu, database, usuário e senha). Explore as tabelas `cliente`,
-`produto` e `pedido` já carregadas.
+**Como criar a conexão**:
+
+1. Abra o DBeaver → `Database` → `New Database Connection` (ou o ícone de
+   tomada com `+` na barra de ferramentas).
+2. Na lista de drivers, escolha **PostgreSQL** → `Next`.
+3. Preencha os campos da aba "Main" com os dados impressos pelo `setup.py`:
+
+   | Campo | Valor |
+   |---|---|
+   | Host | `localhost` |
+   | Port | a porta que você escolheu (ex. `5434`) |
+   | Database | `loja` (ou o nome que você escolheu) |
+   | Username | `aluno` (ou o que você escolheu) |
+   | Password | `aluno123` (ou o que você escolheu) — marque "Save password" |
+
+4. `Test Connection...` — na primeira vez o DBeaver oferece baixar o driver
+   JDBC do PostgreSQL automaticamente; aceite. Deve aparecer "Connected".
+5. `Finish`. A conexão aparece na árvore à esquerda — expanda até
+   `Databases → loja → Schemas → public → Tables` e confira `cliente`,
+   `produto` e `pedido` já carregadas.
+
+> *(Espaço reservado pra um print real da tela "Connection Settings" do
+> DBeaver com os campos acima preenchidos — tire um na sua máquina e troque
+> este parágrafo por `![Nova conexão no DBeaver](imagens/dbeaver-nova-conexao.png)`.)*
 
 ## 3. Parâmetros de configuração
 
