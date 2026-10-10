@@ -109,7 +109,7 @@ def corrigir_um(pasta: Path) -> tuple[float, str]:
     resultados = rodar_checks(
         {"host": "localhost", "port": PORTA, "user": PGUSER, "password": PGPASSWORD, "dbname": PGDATABASE}
     )
-    detalhe = "; ".join(f"{r.nome}={'ok' if r.ok else 'falhou'}" for r in resultados)
+    detalhe = "; ".join(f"{r.nome}({r.peso:.2f}pt)={'ok' if r.ok else 'falhou'}" for r in resultados)
     return nota(resultados), detalhe
 
 

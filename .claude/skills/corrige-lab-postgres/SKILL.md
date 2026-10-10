@@ -33,6 +33,9 @@ python correcao/corrige_lab.py entregas/
 
 Isso gera `resultados.csv` (irmão da pasta de entregas) com colunas
 `aluno,nota,detalhe`. Garanta que o Docker está rodando antes (`docker info`).
+O script usa só `subprocess`/`docker`/`psycopg2` — roda igual em Windows,
+Linux ou macOS, o que importa é onde a correção está sendo executada, não o
+SO de onde vieram as entregas dos alunos.
 
 ## Depois de rodar
 

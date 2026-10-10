@@ -36,11 +36,13 @@ def main() -> int:
     resultados = rodar_checks(carregar_conexao())
     for r in resultados:
         status = "OK " if r.ok else "FALHOU"
-        print(f"[{status}] {r.nome}" + (f" — {r.detalhe}" if r.detalhe else ""))
+        peso = f" ({r.peso:.2f} pt)" if r.peso else ""
+        print(f"[{status}] {r.nome}{peso}" + (f" — {r.detalhe}" if r.detalhe else ""))
 
     print()
     total_ok = sum(r.ok for r in resultados)
     print(f"{total_ok}/{len(resultados)} checks passaram.")
+    print(f"Nota estimada (rubrica): {nota(resultados):.1f}/10")
     return 0 if all(r.ok for r in resultados) else 1
 
 

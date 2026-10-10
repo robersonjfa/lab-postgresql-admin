@@ -1,5 +1,48 @@
 # Laboratório — Administração de PostgreSQL
 
+## Orientações iniciais (leia antes de começar)
+
+- **Objetivo**: praticar administração de PostgreSQL — parâmetros de
+  configuração, autenticação, roles/privilégios e backup/restore lógico.
+  Não é uma atividade sobre Linux/Docker: o container é só o "servidor"
+  onde você pratica, não o foco da avaliação.
+- **Ambiente individual**: cada aluno sobe o próprio container, na própria
+  máquina. Nada é compartilhado entre colegas nem depende de rede/servidor
+  central — pode fazer de casa ou do laboratório.
+- **Pode errar e resetar**: `docker compose down -v` apaga tudo e volta ao
+  zero. Use sem medo pra testar — é mais barato resetar o container do que
+  tentar desfazer um erro manualmente.
+- **O que entregar e quando**: ao final da seção "Entrega" tem a lista
+  exata de arquivos. *(Ajuste aqui o prazo e o canal de envio — Moodle,
+  por exemplo — antes de repassar aos alunos.)*
+- **Como será avaliado**: a seção "Critério de avaliação" logo abaixo mostra
+  o peso de cada item. Rode `python check_lab.py` quando quiser conferir sua
+  nota estimada antes de entregar — ele não envia nada, é só pra você se
+  autoavaliar.
+- **Dúvidas durante a aula**: *(ajuste aqui o canal — ex.: levantar a mão,
+  fórum do Moodle, etc.)*
+
+## Critério de avaliação
+
+A nota (0 a 10) é a soma dos pesos dos itens que passam, verificados
+automaticamente por `check_lab.py` (sua autoavaliação) e `corrige_lab.py`
+(correção oficial do professor, numa cópia isolada do seu ambiente).
+
+| Item avaliado | Peso | O que precisa ser verdade |
+|---|---|---|
+| `max_connections` ajustado | 1.0 | valor diferente do padrão, conforme pedido na etapa 3 |
+| `work_mem` ajustado | 1.0 | valor diferente do padrão, conforme pedido na etapa 3 |
+| `pg_hba.conf` sem regras `trust` | 1.5 | nenhuma linha do `pg_hba.conf` ativo usa `trust` (etapa 4) |
+| Role `leitor` existe | 1.5 | a role foi recriada após o restore (etapa 5 + `roles.sql`) |
+| Tabela `cliente` restaurada | 1.67 | existe e tem os dados esperados após o restore (etapa 7) |
+| Tabela `produto` restaurada | 1.67 | idem |
+| Tabela `pedido` restaurada | 1.66 | idem |
+| **Total** | **10.0** | |
+
+Conexão com o banco é pré-requisito, não item avaliado: se o `check_lab.py`
+nem conseguir conectar, a nota fica 0 independente dos outros itens (não há
+como verificar o resto sem conseguir entrar no banco).
+
 ## Visão geral e tempo estimado
 
 | Etapa | Conceito | Tempo estimado |
@@ -17,8 +60,19 @@ Turmas sem experiência prévia com Docker/DBeaver tendem a gastar uns 15-20 min
 só nas etapas 1-2 (instalação, primeira conexão). Depois disso o ritmo acelera.
 
 ## Pré-requisitos
-- Docker Desktop (ou Docker Engine + Compose) instalado e rodando.
+- Docker Desktop (Windows/macOS) ou Docker Engine + Compose (Linux), instalado e rodando.
+  No Windows, o Docker Desktop exige o backend WSL2 (ele mesmo guia a instalação disso).
 - [DBeaver](https://dbeaver.io/) instalado (Community Edition é suficiente).
+- Python 3 (só pra rodar `setup.py` e `check_lab.py` — já vem instalado no macOS/Linux;
+  no Windows, instale do [python.org](https://python.org) marcando "Add to PATH").
+
+Se a máquina do laboratório ainda não tem nada disso configurado, veja
+[`preparacao-maquinas-lab.md`](preparacao-maquinas-lab.md) — checklist
+separado pra quem prepara as máquinas antes da aula (instalar Docker,
+permissões, pré-baixar a imagem pra não depender da rede da sala no dia).
+
+Tudo neste roteiro (comandos `docker ...`) funciona igual em Windows (PowerShell ou
+cmd), Linux e macOS — nenhum comando depende de bash.
 
 ## Arquitetura do ambiente
 
@@ -48,12 +102,13 @@ ou num RDS da AWS — só a forma de acessar o arquivo de configuração muda (a
 ## 1. Subir o ambiente
 
 ```bash
-./setup.sh
+python3 setup.py   # Linux / macOS
+python setup.py    # Windows
 ```
 
 O script pergunta a porta (padrão `5433`, pra não conflitar com um Postgres que já exista
 no seu computador na `5432`), usuário, senha e nome do banco. Ao final ele já sobe o
-container e mostra os dados de conexão.
+container e mostra os dados de conexão. Funciona igual em Windows, Linux e macOS.
 
 Pra parar: `docker compose stop`. Pra resetar tudo do zero (apaga os dados): `docker compose down -v`.
 
@@ -129,8 +184,15 @@ Mesma mecânica do passo anterior, com `pg_hba.conf`:
 docker cp lab_postgres:/var/lib/postgresql/18/docker/pg_hba.conf entrega/pg_hba.conf
 ```
 
-Ajuste a regra de autenticação pra exigir `scram-sha-256` (em vez de `trust`/`md5`) e
-copie de volta + `docker compose restart db`. Teste reconectando no DBeaver.
+No arquivo copiado, troque **todas** as linhas com método `trust` para
+`scram-sha-256` (são as linhas `local`/`host` para `all`/`127.0.0.1`/`::1` —
+a conexão publicada no host, pela porta do DBeaver, já usa `scram-sha-256`
+por padrão numa regra catch-all; o que falta trocar é o acesso local/direto
+ao container). Copie de volta + `docker compose restart db`.
+
+Teste: `docker compose exec db psql -U aluno -d loja` deve passar a **pedir
+senha** (antes não pedia, por causa do `trust`). Teste reconectando também
+no DBeaver — continua funcionando, porque a senha já estava certa lá.
 
 ## 5. Roles e privilégios
 
@@ -166,42 +228,54 @@ e pra a maioria dos cenários de PME, o backup lógico é suficiente e mais simp
 entender.
 
 ```bash
-docker compose exec db pg_dump -U aluno -d loja -F p > entrega/dump_final.sql
+docker compose exec db pg_dump -U aluno -d loja -F p -f /tmp/dump_final.sql
+docker cp lab_postgres:/tmp/dump_final.sql entrega/dump_final.sql
 ```
 
-(ajuste usuário/banco se tiver mudado no `setup.sh`).
+(ajuste usuário/banco se tiver mudado no `setup.py`). Usamos `-f` + `docker cp` em vez
+de `>` porque esse padrão funciona idêntico em bash, zsh, cmd **e** PowerShell — o
+operador `>` de redirecionamento se comporta de forma diferente entre eles.
 
 ## 7. Restore (simulando perda de dados)
 
 **Conceito**: um plano de backup só vale alguma coisa se o restore funciona — por
-isso essa etapa simula o cenário mais comum de desastre em produção: alguém
-derrubou a tabela errada.
+isso essa etapa simula o cenário mais realista de desastre: perder o servidor
+inteiro e precisar restaurar num servidor novo (não só apagar uma tabela — se
+fosse só isso, a role continuaria existindo e `roles.sql` não serviria pra
+nada, já que role é objeto de *cluster*, não de banco, e não é afetada por
+`DROP TABLE`).
 
 ```mermaid
 sequenceDiagram
     participant Aluno
     participant DB as Container Postgres
     Aluno->>DB: pg_dump (gera entrega/dump_final.sql)
-    Note over Aluno,DB: backup guardado
-    Aluno->>DB: DROP TABLE ... CASCADE (simula o acidente)
-    Note over DB: dados perdidos
-    Aluno->>DB: psql < dump_final.sql (restore)
-    DB-->>Aluno: dados restaurados
+    Note over Aluno,DB: backup guardado (dados + role leitor já existiam)
+    Aluno->>DB: DROP TABLE ... CASCADE + DROP ROLE leitor (simula servidor novo)
+    Note over DB: dados E role perdidos
+    Aluno->>DB: roles.sql, depois dump_final.sql (restore)
+    DB-->>Aluno: dados e role restaurados
 ```
 
-1. Simule um "acidente" apagando as tabelas (sem destruir o container/volume —
-   **não** use `docker compose down -v` aqui, porque isso dispara de novo o
-   `seed/init.sql` e colide com o restore do dump):
+1. Simule a perda do servidor (sem destruir o container/volume — **não** use
+   `docker compose down -v` aqui, porque isso dispara de novo o `seed/init.sql`
+   e colide com o restore do dump). Apague tabelas **e** a role, pra simular de
+   verdade um restore em servidor novo (onde nenhum dos dois existiria ainda):
    ```sql
    DROP TABLE pedido, produto, cliente CASCADE;
+   DROP ROLE leitor;
    ```
 2. Restaure — primeiro a role (senão os `GRANT` do dump falham silenciosamente
-   contra uma role que não existe), depois os dados:
+   contra uma role que não existe), depois os dados. De novo, `docker cp` + `-f`
+   em vez de `<` (que **não funciona no PowerShell** — só em bash/zsh/cmd):
    ```bash
-   docker compose exec -T db psql -U aluno -d loja < entrega/roles.sql
-   docker compose exec -T db psql -U aluno -d loja < entrega/dump_final.sql
+   docker cp entrega/roles.sql lab_postgres:/tmp/roles.sql
+   docker compose exec db psql -U aluno -d loja -f /tmp/roles.sql
+
+   docker cp entrega/dump_final.sql lab_postgres:/tmp/dump_final.sql
+   docker compose exec db psql -U aluno -d loja -f /tmp/dump_final.sql
    ```
-3. Confirme no DBeaver que os dados voltaram e que a role `leitor` ainda existe.
+3. Confirme no DBeaver que os dados voltaram e que a role `leitor` existe de novo.
 
 ## Entrega
 
@@ -211,3 +285,6 @@ Envie pelo Moodle:
 - `entrega/roles.sql`
 - `entrega/dump_final.sql`
 - a saída do `check_lab.py` (rode `python check_lab.py` e anexe o resultado)
+
+Veja o peso de cada um desses itens na nota final em "Critério de avaliação",
+no início deste documento.
