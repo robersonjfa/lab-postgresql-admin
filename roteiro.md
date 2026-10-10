@@ -170,9 +170,10 @@ laboratório.
    `Databases → loja → Schemas → public → Tables` e confira `cliente`,
    `produto` e `pedido` já carregadas.
 
-> *(Espaço reservado pra um print real da tela "Connection Settings" do
-> DBeaver com os campos acima preenchidos — tire um na sua máquina e troque
-> este parágrafo por `![Nova conexão no DBeaver](imagens/dbeaver-nova-conexao.png)`.)*
+![Tela "Connect to a database" do DBeaver, driver PostgreSQL, aba Main com os campos Host, Port, Database, Username e Password](imagens/dbeaver-nova-conexao.png)
+
+*(Os valores da imagem são os padrões do DBeaver — use os seus, impressos
+pelo `setup.py` ao final do passo 1, não os da tela acima.)*
 
 ## 3. Parâmetros de configuração
 
