@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18
+    container_name: lab_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aluno}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aluno123}
+      POSTGRES_DB: ${POSTGRES_DB:-loja}
+    ports:
+      # porta no HOST configurável (evita conflito com um Postgres local já na 5432)
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      # scripts em seed/ rodam automaticamente só na primeira inicialização (banco vazio)
+      - ./seed:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  pgdata:
