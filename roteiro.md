@@ -150,6 +150,12 @@ Conecte uma nova conexão no DBeaver com o usuário `leitor` e confirme que:
 - consegue fazer `SELECT` em `produto`;
 - **não** consegue fazer `INSERT`/`UPDATE`/`DELETE`.
 
+**Atenção, pegadinha conceitual importante**: role é um objeto do *cluster*
+Postgres, não do banco — por isso `pg_dump` (próxima etapa) **não leva role
+nenhuma** no backup, só os `GRANT` que referenciam ela. Guarde os dois comandos
+SQL acima em `entrega/roles.sql` — é esse arquivo que recria a role antes do
+restore do dump.
+
 ## 6. Backup lógico
 
 **Conceito**: `pg_dump` gera um **backup lógico** — um arquivo com os comandos SQL
@@ -189,16 +195,19 @@ sequenceDiagram
    ```sql
    DROP TABLE pedido, produto, cliente CASCADE;
    ```
-2. Restaure a partir do dump:
+2. Restaure — primeiro a role (senão os `GRANT` do dump falham silenciosamente
+   contra uma role que não existe), depois os dados:
    ```bash
+   docker compose exec -T db psql -U aluno -d loja < entrega/roles.sql
    docker compose exec -T db psql -U aluno -d loja < entrega/dump_final.sql
    ```
-3. Confirme no DBeaver que os dados voltaram.
+3. Confirme no DBeaver que os dados voltaram e que a role `leitor` ainda existe.
 
 ## Entrega
 
 Envie pelo Moodle:
 - `entrega/postgresql.conf`
 - `entrega/pg_hba.conf`
+- `entrega/roles.sql`
 - `entrega/dump_final.sql`
 - a saída do `check_lab.py` (rode `python check_lab.py` e anexe o resultado)
