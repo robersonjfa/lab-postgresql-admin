@@ -33,6 +33,14 @@ de descobrir isso em cima da hora com 30 alunos esperando.
   confirmar que ele realmente inicia (ícone da bandeja fica "Engine running").
 - Terminal recomendado pros alunos: PowerShell (vem padrão). O roteiro já foi
   escrito evitando comandos que só funcionam em bash (sem `<` de redirecionamento).
+- **Cuidado com o "Python" fake da Microsoft Store**: no Windows sem Python
+  instalado, digitar `python` no terminal não dá erro — abre a Microsoft
+  Store na página do Python, porque é um alias/stub que o próprio Windows
+  registra. Instale o Python de verdade em
+  [python.org/downloads](https://www.python.org/downloads/) (marcando "Add
+  python.exe to PATH" no instalador) e confirme com `python --version` antes
+  da aula — se abrir a Store em vez de mostrar a versão, o Python real não
+  está instalado.
 
 ### Linux
 - Docker Engine + plugin `docker compose` (`sudo apt install docker.io

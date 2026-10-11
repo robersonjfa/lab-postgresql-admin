@@ -46,13 +46,17 @@ def main() -> int:
     senha = perguntar("Senha do banco", "aluno123")
     banco = perguntar("Nome do banco", "loja")
 
-    (RAIZ / ".env").write_text(
-        f"POSTGRES_PORT={porta_txt}\n"
-        f"POSTGRES_USER={usuario}\n"
-        f"POSTGRES_PASSWORD={senha}\n"
-        f"POSTGRES_DB={banco}\n",
-        encoding="utf-8",
-    )
+    # newline="\n" força LF mesmo no Windows — sem isso, o modo texto padrão do
+    # Python grava CRLF, e o parser de .env do Docker Compose pode deixar um
+    # "\r" sobrando no fim do último valor (ex.: a senha vira "aluno123\r"),
+    # causando falha de autenticação sem mensagem de erro clara.
+    with open(RAIZ / ".env", "w", encoding="utf-8", newline="\n") as f:
+        f.write(
+            f"POSTGRES_PORT={porta_txt}\n"
+            f"POSTGRES_USER={usuario}\n"
+            f"POSTGRES_PASSWORD={senha}\n"
+            f"POSTGRES_DB={banco}\n"
+        )
 
     print("\nConfiguração salva em .env. Subindo o container...")
     try:
