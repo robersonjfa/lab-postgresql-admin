@@ -137,6 +137,12 @@ Pronto! Conecte no DBeaver com:
 Driver: PostgreSQL (o DBeaver detecta e baixa o driver na primeira conexão).
 ```
 
+Captura real de uma execução (nesta captura as respostas foram enviadas automatizadas, por
+isso as quatro perguntas aparecem juntas numa linha só — digitando à mão, cada pergunta e
+resposta fica na sua própria linha, igual ao bloco de texto acima):
+
+![Terminal rodando setup.py: pergunta porta/usuário/senha/banco, sobe o container via Docker Compose e mostra os dados de conexão para o DBeaver](imagens/setup-execucao.png)
+
 Se a porta escolhida já estiver ocupada, o script avisa e pergunta de novo —
 não precisa reiniciar nada, só escolher outra porta (ex. `5434`, `5500`...).
 
